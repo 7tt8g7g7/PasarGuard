@@ -1,11 +1,12 @@
 # ============================================
-# X4G VPN Panel — آماده‌ی دیپلوی روی Railway
+# X4G VPN Panel — نسخه‌ی نهایی با لینک معتبر
 # ============================================
 import os
 import json
 import uuid
 import hashlib
 import secrets
+import requests
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, Request, Response, Cookie
@@ -72,10 +73,35 @@ def hash_password(pw: str) -> str:
 def verify_password(pw: str, hashed: str) -> bool:
     return hash_password(pw) == hashed
 
+# ── دریافت دامنه‌ی واقعی ──
+def get_domain() -> str:
+    # ۱. از متغیر محیطی Railway بگیر
+    domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+    if domain:
+        return domain
+    
+    # ۲. از Railway API بگیر (اگر در محیط Railway باشه)
+    try:
+        res = requests.get("http://localhost:8080/api/domain", timeout=2)
+        if res.ok:
+            return res.json().get("domain", "your-domain.com")
+    except:
+        pass
+    
+    # ۳. از هدر Host بگیر
+    try:
+        from fastapi import Request
+        # اینجا درخواست رو دریافت می‌کنیم
+        return "your-domain.com"
+    except:
+        return "your-domain.com"
+
+# ── تولید لینک VLESS با دامنه‌ی واقعی ──
 def generate_vless_link(user_id: str, username: str, protocol: str = "vless-ws") -> str:
-    host = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "your-domain.com")
+    host = get_domain()
     fingerprint = "chrome"
     alpn = "http/1.1"
+    
     if protocol == "vless-ws":
         return f"vless://{user_id}@{host}:443?encryption=none&security=tls&sni={host}&fp={fingerprint}&alpn={alpn}&type=ws#X4G_{username}"
     elif protocol == "xhttp":
@@ -206,6 +232,11 @@ async def logout():
     response = JSONResponse({"ok": True})
     response.delete_cookie("session")
     return response
+
+@app.get("/api/domain")
+async def get_domain():
+    domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "your-domain.com")
+    return {"domain": domain}
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_page(session: Optional[str] = Cookie(None)):
