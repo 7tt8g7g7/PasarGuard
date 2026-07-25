@@ -1,5 +1,5 @@
 # ============================================
-# X4G VPN Panel — نسخه‌ی عاشقانه با پیام امروز 🌹
+# X4G VPN Panel — نسخه‌ی نهایی با پیام امروز 🌹
 # ============================================
 import os, json, uuid, hashlib, secrets, random
 from datetime import datetime, timedelta
@@ -121,7 +121,6 @@ LOGIN_HTML = """<!DOCTYPE html>
             position: relative;
         }
         
-        /* ستاره‌های عاشقانه */
         body::before {
             content: '✨🌙✨💫✨🌙✨';
             position: absolute;
@@ -623,7 +622,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         
         <!-- ===== دکمه‌ی پیام امروز ===== -->
         <div class="love-btn-container">
-            <button class="love-btn" onclick="toggleMessage()">
+            <button class="love-btn" onclick="toggleMessage()" id="loveToggleBtn">
                 <span class="pulse">🌹</span> نمایش پیام امروز <span class="pulse">🩵</span>
             </button>
         </div>
@@ -631,7 +630,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         <!-- ===== کارت پیام کشویی ===== -->
         <div class="message-card" id="messageCard">
             <div class="message-content" id="messageContent">
-                <span class="big-emoji">🌙</span>
+                <span class="big-emoji" id="msgEmoji">🌙</span>
                 <span id="loveMessage">❤️ ماه من، امروز هم روزت پر از عشق و آرامش 🌹</span>
                 <span class="message-date" id="messageDate">📅 امروز</span>
             </div>
@@ -646,26 +645,37 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     
     <script>
         let isMessageOpen = false;
+        let messageLoaded = false;
         
         async function toggleMessage() {
             const card = document.getElementById('messageCard');
-            const btn = document.querySelector('.love-btn');
+            const btn = document.getElementById('loveToggleBtn');
             
             if (!isMessageOpen) {
-                // دریافت پیام از سرور
-                try {
-                    const r = await fetch('/api/love-message');
-                    const data = await r.json();
-                    document.getElementById('loveMessage').textContent = data.message;
-                    document.getElementById('messageDate').textContent = '📅 ' + data.date;
-                } catch (e) {
-                    document.getElementById('loveMessage').textContent = '🌹 ماه من، امروز هم مثل همیشه دوستت دارم 🩵';
+                // بارگذاری پیام از سرور (فقط یک بار)
+                if (!messageLoaded) {
+                    try {
+                        const r = await fetch('/api/love-message');
+                        const data = await r.json();
+                        document.getElementById('loveMessage').textContent = data.message;
+                        document.getElementById('messageDate').textContent = '📅 ' + data.date;
+                        // تنظیم ایموجی تصادفی
+                        const emojis = ['🌙', '🌸', '💫', '✨', '🌹', '🩵', '💕', '🌟', '❤️'];
+                        document.getElementById('msgEmoji').textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                        messageLoaded = true;
+                    } catch (e) {
+                        console.error('خطا در دریافت پیام:', e);
+                        // پیام پیش‌فرض در صورت خطا
+                        document.getElementById('loveMessage').textContent = '🌹 ماه من، امروز هم مثل همیشه دوستت دارم 🩵';
+                    }
                 }
                 
+                // باز کردن کشویی
                 card.classList.add('open');
                 btn.innerHTML = '<span class="pulse">💕</span> بستن پیام <span class="pulse">🌙</span>';
                 isMessageOpen = true;
             } else {
+                // بستن کشویی
                 card.classList.remove('open');
                 btn.innerHTML = '<span class="pulse">🌹</span> نمایش پیام امروز <span class="pulse">🩵</span>';
                 isMessageOpen = false;
@@ -706,7 +716,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 const links = data.users.map(u => u.vless_link).join('\n');
                 await navigator.clipboard.writeText(links);
                 alert(`📋 ${data.users.length} تا لینک کپی شد 🌙`);
-            } catch (e) {}
+            } catch (e) {
+                alert('😢 خطا در کپی لینک‌ها');
+            }
         }
         
         async function logout() {
@@ -714,6 +726,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             location.href = '/';
         }
         
+        // بارگذاری اولیه
         loadData();
         setInterval(loadData, 15000);
     </script>
@@ -734,22 +747,18 @@ async def login(data: LoginData, response: Response):
 async def get_love_message(session: Optional[str] = Cookie(None)):
     if not session:
         raise HTTPException(status_code=401)
-    # انتخاب پیام تصادفی از لیست
+    
+    # انتخاب پیام تصادفی
     message = random.choice(LOVE_MESSAGES)
-    today = datetime.now().strftime("%A, %d %B %Y")
-    # تبدیل به فارسی
-    days = {"Monday": "دوشنبه", "Tuesday": "سه‌شنبه", "Wednesday": "چهارشنبه", 
-            "Thursday": "پنج‌شنبه", "Friday": "جمعه", "Saturday": "شنبه", "Sunday": "یک‌شنبه"}
-    months = {"January": "دی", "February": "بهمن", "March": "اسفند", "April": "فروردین",
-              "May": "اردیبهشت", "June": "خرداد", "July": "تیر", "August": "مرداد",
-              "September": "شهریور", "October": "مهر", "November": "آبان", "December": "آذر"}
     
-    for en, fa in days.items():
-        today = today.replace(en, fa)
-    for en, fa in months.items():
-        today = today.replace(en, fa)
+    # تاریخ امروز به فارسی
+    today = datetime.now()
+    days = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یک‌شنبه"]
+    months = ["دی", "بهمن", "اسفند", "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر"]
     
-    return {"message": message, "date": today}
+    persian_date = f"{days[today.weekday()]} {today.day} {months[today.month-1]} {today.year}"
+    
+    return {"message": message, "date": persian_date}
 
 @app.get("/api/me")
 async def me(session: Optional[str] = Cookie(None)):
