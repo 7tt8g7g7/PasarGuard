@@ -1,5 +1,5 @@
 # ============================================
-# X4G VPN Panel — نسخه‌ی عاشقانه‌ی ماه من 🫠🩵
+# X4G VPN Panel — نسخه‌ی ساده و مینیمال 🌙
 # ============================================
 import os, json, uuid, hashlib, secrets
 from datetime import datetime, timedelta
@@ -10,7 +10,7 @@ from pydantic import BaseModel
 import uvicorn
 
 # ── تنظیمات ──
-app = FastAPI(title="X4G VPN Panel — ماه من 🫠🩵", version="9.9")
+app = FastAPI(title="X4G VPN Panel", version="9.9")
 DATA_FILE = "vpn_state.json"
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "X4GKING")
 SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(32))
@@ -295,7 +295,7 @@ LOGIN_HTML = """<!DOCTYPE html>
     <div class="card">
         <div class="moon-emoji">🌙</div>
         <h1>سلام ماه من <span class="heart">🫠🩵</span></h1>
-        <p class="subtitle">✨ به پنل عاشقانه‌ی X4G خوش اومدی ✨</p>
+        <!-- پیام خوش‌آمدگویی حذف شد -->
         
         <form id="login">
             <div class="input-group">
@@ -665,6 +665,8 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         
         <div class="stats" id="stats"></div>
         
+        <!-- بخش کاربران غیرفعال شد با # -->
+        <!-- 
         <div class="card">
             <div class="card-title"><span class="icon">👥</span> کاربران</div>
             <table>
@@ -680,7 +682,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <tbody id="users"></tbody>
             </table>
         </div>
+        -->
         
+        <!-- بخش افزودن کاربر غیرفعال شد با # -->
+        <!--
         <div class="card">
             <div class="card-title"><span class="icon">➕</span> افزودن کاربر جدید</div>
             <form id="addUser" class="form-row">
@@ -706,6 +711,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <button type="submit" class="btn-sm">➕ افزودن</button>
             </form>
         </div>
+        -->
         
         <div class="love-footer">
             🌙 تقدیم به عزیزترین <span>ماه من</span> 🫠🩵
@@ -715,6 +721,8 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <script>
         async function loadData() {
             try {
+                // بخش کاربران غیرفعال شد
+                /*
                 const r = await fetch('/api/users');
                 const data = await r.json();
                 
@@ -739,6 +747,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                         </div>
                     </td></tr>
                 `;
+                */
                 
                 const s = await fetch('/api/stats');
                 const stats = await s.json();
@@ -765,6 +774,8 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             }
         }
         
+        // بخش افزودن کاربر غیرفعال شد
+        /*
         document.getElementById('addUser').addEventListener('submit', async e => {
             e.preventDefault();
             const form = e.target;
@@ -795,6 +806,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 alert('😢 مشکلی پیش اومده');
             }
         });
+        */
         
         async function toggleUser(id) {
             try {
