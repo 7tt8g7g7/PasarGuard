@@ -5,9 +5,9 @@
   },
   "deploy": {
     "startCommand": "python app.py",
-    "healthcheckPath": "/panel",
+    "healthcheckPath": "/dashboard",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
-    "memory": 512
+    "memory": 1024
   }
 }
