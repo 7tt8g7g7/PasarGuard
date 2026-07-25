@@ -1,5 +1,5 @@
 # ============================================
-# X4G VPN Panel — نسخه‌ی نهایی با پیام امروز 🌹
+# X4G VPN Panel — نسخه‌ی نهایی با پیام تصادفی 🌹
 # ============================================
 import os, json, uuid, hashlib, secrets, random
 from datetime import datetime, timedelta
@@ -534,16 +534,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             margin-bottom: 10px;
         }
         
-        .message-content .heart-rain {
-            display: inline-block;
-            animation: rainHeart 2s infinite;
-        }
-        
-        @keyframes rainHeart {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-        
         .message-date {
             display: block;
             font-size: 14px;
@@ -640,33 +630,37 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     
     <script>
         let isMessageOpen = false;
-        let messageLoaded = false;
         
         async function toggleMessage() {
             const card = document.getElementById('messageCard');
             const btn = document.getElementById('loveToggleBtn');
             
             if (!isMessageOpen) {
-                if (!messageLoaded) {
-                    try {
-                        const r = await fetch('/api/love-message');
-                        if (!r.ok) throw new Error('خطا');
-                        const data = await r.json();
-                        document.getElementById('loveMessage').textContent = data.message;
-                        document.getElementById('messageDate').textContent = '📅 ' + data.date;
-                        const emojis = ['🌙', '🌸', '💫', '✨', '🌹', '🩵', '💕', '🌟', '❤️'];
-                        document.getElementById('msgEmoji').textContent = emojis[Math.floor(Math.random() * emojis.length)];
-                        messageLoaded = true;
-                    } catch (e) {
-                        document.getElementById('loveMessage').textContent = '🌹 ماه من، امروز هم مثل همیشه دوستت دارم 🩵';
-                        document.getElementById('messageDate').textContent = '📅 ' + new Date().toLocaleDateString('fa-IR');
-                        messageLoaded = true;
-                    }
+                try {
+                    // هر بار که کلیک میشه، از سرور پیام جدید می‌گیره
+                    const r = await fetch('/api/love-message');
+                    if (!r.ok) throw new Error('خطا');
+                    const data = await r.json();
+                    
+                    // نمایش پیام جدید
+                    document.getElementById('loveMessage').textContent = data.message;
+                    document.getElementById('messageDate').textContent = '📅 ' + data.date;
+                    document.getElementById('msgEmoji').textContent = data.emoji || '🌙';
+                    
+                } catch (e) {
+                    // در صورت خطا، پیام پیش‌فرض با ایموجی رندوم
+                    const fallbackEmojis = ['🌙', '🌸', '💫', '✨', '🌹', '🩵', '💕'];
+                    document.getElementById('loveMessage').textContent = '🌹 ماه من، امروز هم مثل همیشه دوستت دارم 🩵';
+                    document.getElementById('messageDate').textContent = '📅 ' + new Date().toLocaleDateString('fa-IR');
+                    document.getElementById('msgEmoji').textContent = fallbackEmojis[Math.floor(Math.random() * fallbackEmojis.length)];
                 }
+                
+                // باز کردن کشویی
                 card.classList.add('open');
                 btn.innerHTML = '<span class="pulse">💕</span> بستن پیام <span class="pulse">🌙</span>';
                 isMessageOpen = true;
             } else {
+                // بستن کشویی
                 card.classList.remove('open');
                 btn.innerHTML = '<span class="pulse">🌹</span> نمایش پیام امروز <span class="pulse">🩵</span>';
                 isMessageOpen = false;
@@ -733,7 +727,7 @@ async def login(data: LoginData, response: Response):
         return response
     raise HTTPException(status_code=401, detail="رمز عبور اشتباه است")
 
-# ✅ مسیر پیام امروز (بدون نیاز به کوکی)
+# ✅ مسیر پیام امروز (بدون نیاز به کوکی، برگرداندن پیام تصادفی)
 @app.get("/api/love-message")
 async def get_love_message():
     message = random.choice(LOVE_MESSAGES)
@@ -741,7 +735,9 @@ async def get_love_message():
     days = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یک‌شنبه"]
     months = ["دی", "بهمن", "اسفند", "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر"]
     persian_date = f"{days[today.weekday()]} {today.day} {months[today.month-1]} {today.year}"
-    return {"message": message, "date": persian_date}
+    emojis = ['🌙', '🌸', '💫', '✨', '🌹', '🩵', '💕', '🌟', '❤️', '🫠']
+    random_emoji = random.choice(emojis)
+    return {"message": message, "date": persian_date, "emoji": random_emoji}
 
 @app.get("/api/me")
 async def me(session: Optional[str] = Cookie(None)):
@@ -787,8 +783,7 @@ async def create_user(data: UserCreate, session: Optional[str] = Cookie(None)):
     if not session:
         raise HTTPException(status_code=401)
     uid = str(uuid.uuid4())
-    expires_at = (datetime.now() + timedelta(days=data.expires_days)).isoformat() if data.expires_days > 0 else None
-    state["users"][uid] = {
+    expires_at = (datetime.now() + timedelta(days=data.expires_days)).isoformat() if data.expires_days > 0 else None    state["users"][uid] = {
         "username": data.username,
         "password": hash_password(data.password),
         "limit_gb": data.limit_gb,
