@@ -1,7 +1,7 @@
 # ============================================
-# X4G VPN Panel — نسخه‌ی ساده و مینیمال 🌙
+# X4G VPN Panel — نسخه‌ی عاشقانه با پیام امروز 🌹
 # ============================================
-import os, json, uuid, hashlib, secrets
+import os, json, uuid, hashlib, secrets, random
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Request, Response, Cookie
@@ -14,6 +14,25 @@ app = FastAPI(title="X4G VPN Panel", version="9.9")
 DATA_FILE = "vpn_state.json"
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "X4GKING")
 SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+
+# ── پیام‌های عاشقانه روزانه ──
+LOVE_MESSAGES = [
+    "🌹 امروز هم مثل همیشه ماه منی... ❤️",
+    "🩵 دلتنگتم بیشتر از روزای قبل... 😔",
+    "🌙 ماه من، روزت پر از نور و عشق 🌟",
+    "💫 هر ثانیه که می‌گذره، بیشتر دوستت دارم 🫠",
+    "🌸 امروز با یاد تو شروع شد... عزیزترینم",
+    "✨ تو بهترین اتفاق زندگی منی... ماه من 🩵",
+    "🌹 عشق من، چشمانت مثل آسمون شب می‌درخشه 🌙",
+    "💕 دلم برای صدای خندت تنگ شده... ماه من",
+    "🌟 امروز می‌خوام بهت بگم که چقدر دوستت دارم 🫠🩵",
+    "🌙 ماه من، تو باارزش‌ترین گنج منی... ❤️",
+    "🩵 هر روز عاشق‌تر از دیروز میشم... ماه من",
+    "💫 تو رویای منی که تعبیر شد... عشق زندگی من",
+    "🌹 با تو بودن یعنی آرامش... یعنی خوشبختی ماه من",
+    "✨ هیچ‌کس مثل تو نمی‌درخشه... تو ماه منی 🌙",
+    "💕 عشق من، امروز هم بهت فکر میکنم... همیشه 🌟"
+]
 
 # ── مدل‌ها ──
 class UserCreate(BaseModel):
@@ -185,15 +204,6 @@ LOGIN_HTML = """<!DOCTYPE html>
             70% { transform: scale(1); }
         }
         
-        .subtitle {
-            text-align: center;
-            color: #8aa0c4;
-            font-size: 14px;
-            margin-bottom: 30px;
-            opacity: 0.7;
-            font-weight: 400;
-        }
-        
         .input-group {
             position: relative;
             margin-bottom: 24px;
@@ -295,7 +305,6 @@ LOGIN_HTML = """<!DOCTYPE html>
     <div class="card">
         <div class="moon-emoji">🌙</div>
         <h1>سلام ماه من <span class="heart">🫠🩵</span></h1>
-        <!-- پیام خوش‌آمدگویی حذف شد -->
         
         <form id="login">
             <div class="input-group">
@@ -317,7 +326,6 @@ LOGIN_HTML = """<!DOCTYPE html>
             e.preventDefault();
             const pw = document.getElementById('pw').value;
             
-            // افکت عاشقانه موقع کلیک
             const btn = document.querySelector('.btn');
             btn.innerHTML = '🫠 دارم چک میکنم... 🤪';
             btn.style.opacity = '0.7';
@@ -349,7 +357,6 @@ LOGIN_HTML = """<!DOCTYPE html>
             }
         });
         
-        // Enter key support
         document.getElementById('pw').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 document.querySelector('.btn').click();
@@ -435,6 +442,121 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             background: rgba(255, 255, 255, 0.04);
         }
         
+        /* ===== دکمه‌ی پیام امروز ===== */
+        .love-btn-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        
+        .love-btn {
+            background: linear-gradient(135deg, #ff6b9d, #ff4d6d, #ff6b9d);
+            background-size: 200% 200%;
+            animation: gradientFlow 3s ease infinite;
+            color: #fff;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-family: 'Vazirmatn', sans-serif;
+            box-shadow: 0 8px 40px rgba(255, 107, 157, 0.3);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+        }
+        
+        .love-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 12px 50px rgba(255, 107, 157, 0.5);
+        }
+        
+        .love-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .love-btn .pulse {
+            display: inline-block;
+            animation: pulseBtn 1.5s infinite;
+        }
+        
+        @keyframes pulseBtn {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* ===== کارت پیام کشویی ===== */
+        .message-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 0 24px;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            opacity: 0;
+            margin-bottom: 20px;
+            transform: translateY(-10px);
+        }
+        
+        .message-card.open {
+            max-height: 400px;
+            padding: 28px 24px;
+            opacity: 1;
+            transform: translateY(0);
+            border-color: rgba(255, 107, 157, 0.2);
+            box-shadow: 0 0 40px rgba(255, 107, 157, 0.05);
+        }
+        
+        .message-content {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #edf2ff;
+            line-height: 1.8;
+            animation: messageAppear 0.6s ease;
+        }
+        
+        @keyframes messageAppear {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .message-content .big-emoji {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .message-content .heart-rain {
+            display: inline-block;
+            animation: rainHeart 2s infinite;
+        }
+        
+        @keyframes rainHeart {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        .message-date {
+            display: block;
+            font-size: 14px;
+            color: #8aa0c4;
+            margin-top: 12px;
+            font-weight: 400;
+            opacity: 0.7;
+        }
+        
+        /* ===== بقیه استایل‌ها ===== */
         .stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -476,170 +598,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             margin-right: 4px;
         }
         
-        .card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 22px 24px;
-            margin-bottom: 18px;
-        }
-        
-        .card-title {
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #8aa0c4;
-            letter-spacing: 0.3px;
-        }
-        
-        .card-title .icon {
-            color: #5b8def;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        
-        th {
-            text-align: right;
-            padding: 10px 0;
-            color: #8aa0c4;
-            font-weight: 600;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        
-        td {
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        }
-        
-        .status-active {
-            color: #3FD79C;
-        }
-        
-        .status-inactive {
-            color: #FB8585;
-        }
-        
-        .actions {
-            display: flex;
-            gap: 6px;
-        }
-        
-        .actions button {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            color: #8aa0c4;
-            padding: 5px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 11px;
-            transition: all 0.2s;
-            font-family: 'Vazirmatn', sans-serif;
-        }
-        
-        .actions button:hover {
-            background: rgba(91, 141, 239, 0.12);
-            color: #fff;
-            border-color: rgba(91, 141, 239, 0.3);
-        }
-        
-        .actions button.danger:hover {
-            background: rgba(255, 107, 107, 0.15);
-            border-color: rgba(255, 107, 107, 0.3);
-            color: #ff6b6b;
-        }
-        
-        .form-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: end;
-        }
-        
-        .form-group {
-            flex: 1;
-            min-width: 140px;
-        }
-        
-        .form-group label {
-            display: block;
-            font-size: 11px;
-            color: #8aa0c4;
-            margin-bottom: 5px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-        }
-        
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 10px 14px;
-            border-radius: 12px;
-            border: 1.5px solid rgba(255, 255, 255, 0.06);
-            background: rgba(255, 255, 255, 0.02);
-            color: #edf2ff;
-            font-size: 13px;
-            outline: none;
-            transition: all 0.3s;
-            font-family: 'Vazirmatn', sans-serif;
-        }
-        
-        .form-group input:focus, .form-group select:focus {
-            border-color: #5b8def;
-            box-shadow: 0 0 0 5px rgba(91, 141, 239, 0.05);
-        }
-        
-        .form-group input::placeholder {
-            color: #4a5a7a;
-        }
-        
-        .form-group select option {
-            background: #1a1040;
-            color: #edf2ff;
-        }
-        
-        .btn-sm {
-            padding: 10px 24px;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(135deg, #5b8def, #7a5cf0);
-            color: #fff;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Vazirmatn', sans-serif;
-            font-size: 13px;
-            min-width: 100px;
-        }
-        
-        .btn-sm:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(91, 141, 239, 0.25);
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 30px 0;
-            color: #4a5a7a;
-            font-size: 14px;
-        }
-        
-        .empty-state .big {
-            font-size: 40px;
-            display: block;
-            margin-bottom: 10px;
-        }
-        
-        /* عشق و ماه */
         .love-footer {
             text-align: center;
             padding: 20px 0 10px;
@@ -663,55 +621,23 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             </div>
         </div>
         
+        <!-- ===== دکمه‌ی پیام امروز ===== -->
+        <div class="love-btn-container">
+            <button class="love-btn" onclick="toggleMessage()">
+                <span class="pulse">🌹</span> نمایش پیام امروز <span class="pulse">🩵</span>
+            </button>
+        </div>
+        
+        <!-- ===== کارت پیام کشویی ===== -->
+        <div class="message-card" id="messageCard">
+            <div class="message-content" id="messageContent">
+                <span class="big-emoji">🌙</span>
+                <span id="loveMessage">❤️ ماه من، امروز هم روزت پر از عشق و آرامش 🌹</span>
+                <span class="message-date" id="messageDate">📅 امروز</span>
+            </div>
+        </div>
+        
         <div class="stats" id="stats"></div>
-        
-        <!-- بخش کاربران غیرفعال شد با # -->
-        <!-- 
-        <div class="card">
-            <div class="card-title"><span class="icon">👥</span> کاربران</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>نام</th>
-                        <th>سهمیه</th>
-                        <th>مصرف</th>
-                        <th>وضعیت</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody id="users"></tbody>
-            </table>
-        </div>
-        -->
-        
-        <!-- بخش افزودن کاربر غیرفعال شد با # -->
-        <!--
-        <div class="card">
-            <div class="card-title"><span class="icon">➕</span> افزودن کاربر جدید</div>
-            <form id="addUser" class="form-row">
-                <div class="form-group">
-                    <label>نام کاربری</label>
-                    <input name="username" placeholder="مثلاً: ماه من" required>
-                </div>
-                <div class="form-group">
-                    <label>رمز عبور</label>
-                    <input name="password" type="password" placeholder="••••••••" required>
-                </div>
-                <div class="form-group" style="flex:0 0 110px;">
-                    <label>سهمیه (GB)</label>
-                    <input name="limit_gb" type="number" placeholder="۱۰۰" value="100">
-                </div>
-                <div class="form-group" style="flex:0 0 120px;">
-                    <label>پروتکل</label>
-                    <select name="protocol">
-                        <option value="vless-ws">VLESS-WS</option>
-                        <option value="xhttp">XHTTP</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn-sm">➕ افزودن</button>
-            </form>
-        </div>
-        -->
         
         <div class="love-footer">
             🌙 تقدیم به عزیزترین <span>ماه من</span> 🫠🩵
@@ -719,36 +645,35 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     </div>
     
     <script>
+        let isMessageOpen = false;
+        
+        async function toggleMessage() {
+            const card = document.getElementById('messageCard');
+            const btn = document.querySelector('.love-btn');
+            
+            if (!isMessageOpen) {
+                // دریافت پیام از سرور
+                try {
+                    const r = await fetch('/api/love-message');
+                    const data = await r.json();
+                    document.getElementById('loveMessage').textContent = data.message;
+                    document.getElementById('messageDate').textContent = '📅 ' + data.date;
+                } catch (e) {
+                    document.getElementById('loveMessage').textContent = '🌹 ماه من، امروز هم مثل همیشه دوستت دارم 🩵';
+                }
+                
+                card.classList.add('open');
+                btn.innerHTML = '<span class="pulse">💕</span> بستن پیام <span class="pulse">🌙</span>';
+                isMessageOpen = true;
+            } else {
+                card.classList.remove('open');
+                btn.innerHTML = '<span class="pulse">🌹</span> نمایش پیام امروز <span class="pulse">🩵</span>';
+                isMessageOpen = false;
+            }
+        }
+        
         async function loadData() {
             try {
-                // بخش کاربران غیرفعال شد
-                /*
-                const r = await fetch('/api/users');
-                const data = await r.json();
-                
-                document.getElementById('users').innerHTML = data.users.length ? data.users.map(u => `
-                    <tr>
-                        <td><strong>${u.username}</strong></td>
-                        <td>${u.limit_gb} <span style="color:#4a5a7a;font-size:11px;">GB</span></td>
-                        <td>${u.used_gb.toFixed(2)} <span style="color:#4a5a7a;font-size:11px;">GB</span></td>
-                        <td class="${u.active ? 'status-active' : 'status-inactive'}">${u.active ? '🟢 فعال' : '🔴 غیرفعال'}</td>
-                        <td class="actions">
-                            <button onclick="toggleUser('${u.id}')">${u.active ? '⏸' : '▶️'}</button>
-                            <button onclick="copyLink('${u.id}')">📋</button>
-                            <button class="danger" onclick="deleteUser('${u.id}')">🗑</button>
-                        </td>
-                    </tr>
-                `).join('') : `
-                    <tr><td colspan="5">
-                        <div class="empty-state">
-                            <span class="big">🫠</span>
-                            هنوز کاربری نداری ماه من<br>
-                            <span style="font-size:12px;">یکی اضافه کن 🤪</span>
-                        </div>
-                    </td></tr>
-                `;
-                */
-                
                 const s = await fetch('/api/stats');
                 const stats = await s.json();
                 document.getElementById('stats').innerHTML = `
@@ -772,71 +697,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             } catch (e) {
                 console.error(e);
             }
-        }
-        
-        // بخش افزودن کاربر غیرفعال شد
-        /*
-        document.getElementById('addUser').addEventListener('submit', async e => {
-            e.preventDefault();
-            const form = e.target;
-            const data = {
-                username: form.username.value,
-                password: form.password.value,
-                limit_gb: parseFloat(form.limit_gb.value) || 0,
-                protocol: form.protocol.value
-            };
-            
-            try {
-                const r = await fetch('/api/users', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                if (r.ok) {
-                    form.reset();
-                    loadData();
-                    // عاشقانه
-                    const btn = form.querySelector('.btn-sm');
-                    btn.textContent = '🩵 اضافه شد 🌙';
-                    setTimeout(() => { btn.textContent = '➕ افزودن'; }, 1500);
-                } else {
-                    alert('😅 خطا ماه من، دوباره تلاش کن');
-                }
-            } catch (err) {
-                alert('😢 مشکلی پیش اومده');
-            }
-        });
-        */
-        
-        async function toggleUser(id) {
-            try {
-                const r = await fetch(`/api/users/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ active: false })
-                });
-                if (r.ok) loadData();
-            } catch (e) {}
-        }
-        
-        async function deleteUser(id) {
-            if (!confirm('😢 مطمئنی ماه من؟')) return;
-            try {
-                const r = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-                if (r.ok) loadData();
-            } catch (e) {}
-        }
-        
-        async function copyLink(id) {
-            try {
-                const r = await fetch('/api/users');
-                const data = await r.json();
-                const user = data.users.find(u => u.id === id);
-                if (user) {
-                    await navigator.clipboard.writeText(user.vless_link);
-                    alert('📋 لینک کپی شد ماه من 🫠');
-                }
-            } catch (e) {}
         }
         
         async function copyAllLinks() {
@@ -869,6 +729,27 @@ async def login(data: LoginData, response: Response):
         response.set_cookie(key="session", value=session_token, httponly=True, max_age=7*24*3600)
         return response
     raise HTTPException(status_code=401, detail="رمز عبور اشتباه است")
+
+@app.get("/api/love-message")
+async def get_love_message(session: Optional[str] = Cookie(None)):
+    if not session:
+        raise HTTPException(status_code=401)
+    # انتخاب پیام تصادفی از لیست
+    message = random.choice(LOVE_MESSAGES)
+    today = datetime.now().strftime("%A, %d %B %Y")
+    # تبدیل به فارسی
+    days = {"Monday": "دوشنبه", "Tuesday": "سه‌شنبه", "Wednesday": "چهارشنبه", 
+            "Thursday": "پنج‌شنبه", "Friday": "جمعه", "Saturday": "شنبه", "Sunday": "یک‌شنبه"}
+    months = {"January": "دی", "February": "بهمن", "March": "اسفند", "April": "فروردین",
+              "May": "اردیبهشت", "June": "خرداد", "July": "تیر", "August": "مرداد",
+              "September": "شهریور", "October": "مهر", "November": "آبان", "December": "آذر"}
+    
+    for en, fa in days.items():
+        today = today.replace(en, fa)
+    for en, fa in months.items():
+        today = today.replace(en, fa)
+    
+    return {"message": message, "date": today}
 
 @app.get("/api/me")
 async def me(session: Optional[str] = Cookie(None)):
