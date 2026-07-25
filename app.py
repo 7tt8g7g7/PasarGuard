@@ -441,7 +441,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             background: rgba(255, 255, 255, 0.04);
         }
         
-        /* ===== دکمه‌ی پیام امروز ===== */
         .love-btn-container {
             display: flex;
             justify-content: center;
@@ -492,7 +491,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             100% { background-position: 0% 50%; }
         }
         
-        /* ===== کارت پیام کشویی ===== */
         .message-card {
             background: rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(24px);
@@ -555,7 +553,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             opacity: 0.7;
         }
         
-        /* ===== بقیه استایل‌ها ===== */
         .stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -620,14 +617,12 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             </div>
         </div>
         
-        <!-- ===== دکمه‌ی پیام امروز ===== -->
         <div class="love-btn-container">
             <button class="love-btn" onclick="toggleMessage()" id="loveToggleBtn">
                 <span class="pulse">🌹</span> نمایش پیام امروز <span class="pulse">🩵</span>
             </button>
         </div>
         
-        <!-- ===== کارت پیام کشویی ===== -->
         <div class="message-card" id="messageCard">
             <div class="message-content" id="messageContent">
                 <span class="big-emoji" id="msgEmoji">🌙</span>
@@ -652,30 +647,26 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             const btn = document.getElementById('loveToggleBtn');
             
             if (!isMessageOpen) {
-                // بارگذاری پیام از سرور (فقط یک بار)
                 if (!messageLoaded) {
                     try {
                         const r = await fetch('/api/love-message');
+                        if (!r.ok) throw new Error('خطا');
                         const data = await r.json();
                         document.getElementById('loveMessage').textContent = data.message;
                         document.getElementById('messageDate').textContent = '📅 ' + data.date;
-                        // تنظیم ایموجی تصادفی
                         const emojis = ['🌙', '🌸', '💫', '✨', '🌹', '🩵', '💕', '🌟', '❤️'];
                         document.getElementById('msgEmoji').textContent = emojis[Math.floor(Math.random() * emojis.length)];
                         messageLoaded = true;
                     } catch (e) {
-                        console.error('خطا در دریافت پیام:', e);
-                        // پیام پیش‌فرض در صورت خطا
                         document.getElementById('loveMessage').textContent = '🌹 ماه من، امروز هم مثل همیشه دوستت دارم 🩵';
+                        document.getElementById('messageDate').textContent = '📅 ' + new Date().toLocaleDateString('fa-IR');
+                        messageLoaded = true;
                     }
                 }
-                
-                // باز کردن کشویی
                 card.classList.add('open');
                 btn.innerHTML = '<span class="pulse">💕</span> بستن پیام <span class="pulse">🌙</span>';
                 isMessageOpen = true;
             } else {
-                // بستن کشویی
                 card.classList.remove('open');
                 btn.innerHTML = '<span class="pulse">🌹</span> نمایش پیام امروز <span class="pulse">🩵</span>';
                 isMessageOpen = false;
@@ -726,7 +717,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             location.href = '/';
         }
         
-        // بارگذاری اولیه
         loadData();
         setInterval(loadData, 15000);
     </script>
@@ -743,21 +733,14 @@ async def login(data: LoginData, response: Response):
         return response
     raise HTTPException(status_code=401, detail="رمز عبور اشتباه است")
 
+# ✅ مسیر پیام امروز (بدون نیاز به کوکی)
 @app.get("/api/love-message")
-async def get_love_message(session: Optional[str] = Cookie(None)):
-    if not session:
-        raise HTTPException(status_code=401)
-    
-    # انتخاب پیام تصادفی
+async def get_love_message():
     message = random.choice(LOVE_MESSAGES)
-    
-    # تاریخ امروز به فارسی
     today = datetime.now()
     days = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یک‌شنبه"]
     months = ["دی", "بهمن", "اسفند", "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر"]
-    
     persian_date = f"{days[today.weekday()]} {today.day} {months[today.month-1]} {today.year}"
-    
     return {"message": message, "date": persian_date}
 
 @app.get("/api/me")
